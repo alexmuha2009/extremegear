@@ -1,0 +1,746 @@
+{% extends "gear/base.html" %}
+
+{% block title %}{{ gear.name }} - Extreme Gear{% endblock %}
+
+{% block content %}
+<style>
+    .page-bg-fixed {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+    .page-bg-fixed .bg-tile {
+        background-size: cover;
+        background-position: center;
+        filter: brightness(0.28) saturate(1.6);
+    }
+    .page-bg-fixed .bg-tile:nth-child(1) { background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=80'); }
+    .page-bg-fixed .bg-tile:nth-child(2) { background-image: url('https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=900&q=80'); }
+    .page-bg-fixed .bg-tile:nth-child(3) { background-image: url('https://images.unsplash.com/photo-1522163182402-834f871fd851?w=900&q=80'); }
+    .page-bg-fixed .bg-tile:nth-child(4) { background-image: url('https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=900&q=80'); }
+
+    .back-link {
+        color: #CCFF00;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700; font-size: 0.85rem;
+        letter-spacing: 2px; text-transform: uppercase;
+        text-decoration: none;
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-bottom: 28px;
+        transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 0.7; color: #CCFF00; }
+
+    .product-card {
+        background: rgba(13,13,13,0.96);
+        border: 1.5px solid #2a2a2a;
+        border-radius: 24px;
+        padding: 48px;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+        margin-bottom: 20px;
+    }
+
+    .product-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 3.2rem; letter-spacing: 4px;
+        color: #fff; margin-bottom: 36px;
+        text-transform: uppercase; line-height: 1.05;
+    }
+
+    .product-image-box {
+        background: #0d0d0d;
+        border: 1.5px solid #2a2a2a;
+        border-radius: 16px;
+        height: 560px;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; padding: 0;
+        position: relative;
+        transition: border-color 0.3s;
+    }
+    .product-image-box:hover { border-color: rgba(204,255,0,0.4); }
+    .product-image-box::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at center, rgba(204,255,0,0.07) 0%, transparent 60%);
+        border-radius: 16px;
+        pointer-events: none; z-index: 0;
+    }
+    .product-image-box img {
+        width: 100%; height: 100%;
+        object-fit: contain;
+        padding: 20px;
+        transition: transform 0.5s ease;
+        position: relative; z-index: 1;
+    }
+    .product-image-box:hover img { transform: scale(1.06); }
+
+    .no-image-placeholder { text-align: center; opacity: 0.2; color: #555; }
+    .no-image-placeholder i { font-size: 5rem; }
+
+    .product-brand {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.75rem; letter-spacing: 3px;
+        text-transform: uppercase; font-weight: 700;
+        color: #CCFF00; margin-bottom: 12px;
+    }
+    .product-price {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 4rem; letter-spacing: 3px;
+        color: #CCFF00;
+        text-shadow: 0 0 30px rgba(204,255,0,0.3);
+        margin-bottom: 18px; line-height: 1;
+    }
+    .product-rating {
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 20px;
+    }
+    .stars { color: #CCFF00; font-size: 1rem; letter-spacing: 2px; }
+    .rating-text { color: #555; font-size: 0.85rem; }
+
+    .stock-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700; font-size: 0.85rem; letter-spacing: 2px;
+        text-transform: uppercase; margin-bottom: 28px;
+    }
+    .stock-badge.in-stock { color: #39ff14; }
+    .stock-badge.out-stock { color: #ff4d4d; }
+
+    .product-divider { border: none; border-top: 1px solid #2a2a2a; margin: 20px 0; }
+
+    .meta-label {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase;
+        color: #555; margin-bottom: 6px; font-weight: 700;
+    }
+    .meta-value {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.95rem; font-weight: 600; color: #fff;
+        letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    .sport-tag {
+        display: inline-block;
+        background: rgba(204,255,0,0.08);
+        color: #CCFF00;
+        border: 1px solid rgba(204,255,0,0.25);
+        padding: 6px 14px;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700; font-size: 0.8rem;
+        letter-spacing: 2px; text-transform: uppercase;
+        border-radius: 20px;
+        margin: 0 6px 6px 0;
+    }
+
+    .btn-buy {
+        background: #CCFF00; color: #000;
+        border: none; padding: 18px 24px; width: 100%;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.3rem; letter-spacing: 3px;
+        cursor: pointer; border-radius: 10px;
+        transition: all 0.25s;
+        box-shadow: 0 4px 24px rgba(204,255,0,0.25);
+        text-transform: uppercase; display: block; text-align: center;
+        text-decoration: none;
+    }
+    .btn-buy:hover { background: #fff; color: #000; transform: translateY(-2px); }
+
+    .btn-cart {
+        background: transparent; color: #fff;
+        border: 1.5px solid #2a2a2a;
+        padding: 14px 24px; width: 100%;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1rem; letter-spacing: 3px;
+        cursor: pointer; border-radius: 10px;
+        transition: all 0.25s; text-transform: uppercase;
+        display: block; text-align: center; text-decoration: none;
+        margin-top: 10px;
+    }
+    .btn-cart:hover { border-color: #CCFF00; color: #CCFF00; }
+
+    .description-section {
+        background: rgba(13,13,13,0.96);
+        border: 1.5px solid #2a2a2a;
+        border-radius: 24px; padding: 40px 48px;
+    }
+    .desc-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.8rem; letter-spacing: 4px;
+        color: #fff; margin-bottom: 20px;
+        display: flex; align-items: center; gap: 14px;
+    }
+    .desc-title::before {
+        content: ''; display: block; width: 5px; height: 28px;
+        background: linear-gradient(180deg, #CCFF00, #ff6b00);
+        border-radius: 3px;
+    }
+    .desc-text {
+        color: rgba(255,255,255,0.65);
+        line-height: 1.9; font-size: 1rem; max-width: 820px;
+    }
+
+    /* ===== НОВА МОДАЛКА ===== */
+    #orderModal .modal-dialog { max-width: 500px; }
+
+    #orderModal .modal-content {
+        background: #0c0c0c;
+        border: none;
+        border-radius: 0;
+        color: #fff;
+        box-shadow:
+            0 0 0 1px #1f1f1f,
+            0 0 0 2px rgba(204,255,0,0.08),
+            0 40px 100px rgba(0,0,0,0.95);
+        position: relative;
+        overflow: hidden;
+    }
+    /* Жовта смужка зверху */
+    #orderModal .modal-content::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: #CCFF00;
+        z-index: 10;
+    }
+    /* Світловий ефект у кутку */
+    #orderModal .modal-content::after {
+        content: '';
+        position: absolute;
+        top: -100px; right: -100px;
+        width: 280px; height: 280px;
+        background: radial-gradient(circle, rgba(204,255,0,0.05) 0%, transparent 65%);
+        pointer-events: none;
+    }
+
+    #orderModal .modal-header {
+        background: transparent;
+        border-bottom: 1px solid #181818;
+        padding: 22px 28px 18px;
+    }
+    #orderModal .modal-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.5rem;
+        letter-spacing: 5px;
+        color: #fff;
+        text-transform: uppercase;
+    }
+    #orderModal .modal-title i { color: #CCFF00; }
+    #orderModal .btn-close-white {
+        filter: invert(1) brightness(0.4);
+        transition: filter 0.2s;
+    }
+    #orderModal .btn-close-white:hover { filter: invert(1) brightness(1); }
+
+    #orderModal .modal-body { padding: 24px 28px 32px; }
+
+    /* Степ індикатор — горизонтальні таби */
+    .step-indicator {
+        display: flex;
+        margin-bottom: 22px;
+        border: 1px solid #1a1a1a;
+        overflow: hidden;
+    }
+    .step-dot {
+        flex: 1;
+        padding: 11px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        font-weight: 700;
+        transition: all 0.25s;
+        cursor: default;
+    }
+    .step-dot .num {
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem;
+        font-family: 'Bebas Neue', sans-serif;
+        flex-shrink: 0;
+        transition: all 0.25s;
+    }
+    .step-dot.active {
+        background: rgba(204,255,0,0.07);
+        color: #CCFF00;
+        border-right: 1px solid #1a1a1a;
+    }
+    .step-dot.active .num { background: #CCFF00; color: #000; }
+    .step-dot.done {
+        background: transparent;
+        color: #383838;
+        border-right: 1px solid #1a1a1a;
+    }
+    .step-dot.done .num { background: #1c1c1c; color: #383838; }
+    .step-dot.inactive { background: transparent; color: #252525; }
+    .step-dot.inactive .num { background: #111; color: #252525; border: 1px solid #1a1a1a; }
+    .step-line { display: none; }
+
+    /* Рядок з товаром і ціною */
+    .order-product-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0 16px;
+        border-bottom: 1px solid #161616;
+        margin-bottom: 20px;
+        gap: 12px;
+    }
+    .order-product-name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #555;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .order-product-price {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.8rem;
+        letter-spacing: 2px;
+        color: #CCFF00;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    /* Поля форми */
+    #orderModal .form-label {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700;
+        font-size: 0.68rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #3a3a3a;
+        margin-bottom: 7px;
+        display: block;
+    }
+    #orderModal .form-control {
+        background: #111 !important;
+        border: 1px solid #1e1e1e !important;
+        border-radius: 0 !important;
+        color: #fff !important;
+        padding: 12px 14px !important;
+        font-family: 'Barlow Condensed', sans-serif !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 1px !important;
+        transition: border-color 0.2s !important;
+    }
+    #orderModal .form-control:focus {
+        border-color: rgba(204,255,0,0.5) !important;
+        box-shadow: none !important;
+        outline: none !important;
+        background: #131313 !important;
+    }
+    #orderModal .form-control::placeholder { color: #2a2a2a !important; }
+
+    /* Telegram блок */
+    .tg-info-block {
+        background: rgba(204,255,0,0.03);
+        border-left: 2px solid rgba(204,255,0,0.25);
+        padding: 10px 14px;
+        margin-bottom: 10px;
+        font-size: 0.8rem;
+        color: #444;
+        font-family: 'Barlow Condensed', sans-serif;
+        letter-spacing: 0.3px;
+        line-height: 1.6;
+    }
+    .tg-info-block a { color: #CCFF00; text-decoration: none; }
+    .tg-info-block b { color: rgba(204,255,0,0.8); }
+
+    /* Захист бейдж */
+    .security-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border: 1px solid #181818;
+        margin-bottom: 16px;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 1.5px;
+        color: #333;
+        text-transform: uppercase;
+    }
+    .security-badge i { color: rgba(204,255,0,0.6); font-size: 0.85rem; }
+
+    /* Кнопка підтвердження */
+    .btn-confirm {
+        background: #CCFF00;
+        color: #000;
+        border: none;
+        padding: 15px;
+        width: 100%;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.1rem;
+        letter-spacing: 4px;
+        cursor: pointer;
+        border-radius: 0;
+        transition: background 0.2s, transform 0.15s;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+    .btn-confirm:hover { background: #fff; transform: translateY(-1px); }
+    .btn-confirm:active { transform: translateY(0); }
+    .btn-confirm:disabled { background: #1a1a1a; color: #2a2a2a; cursor: not-allowed; transform: none; }
+
+    /* Картка Stripe */
+    #card-element {
+        background: #111;
+        border: 1px solid #1e1e1e;
+        border-radius: 0;
+        padding: 13px 14px;
+        margin-bottom: 6px;
+        transition: border-color 0.2s;
+    }
+    #card-element.focused { border-color: rgba(204,255,0,0.5); }
+    #card-errors {
+        color: #e03a3a;
+        font-size: 0.78rem;
+        margin-bottom: 12px;
+        min-height: 18px;
+        font-family: 'Barlow Condensed', sans-serif;
+        letter-spacing: 0.5px;
+    }
+
+    /* Кнопка назад */
+    .btn-back-step {
+        background: transparent;
+        border: none;
+        color: #2a2a2a;
+        width: 100%;
+        margin-top: 10px;
+        cursor: pointer;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 8px;
+        transition: color 0.2s;
+        display: block;
+        text-align: center;
+    }
+    .btn-back-step:hover { color: #555; }
+
+    @media (max-width: 768px) {
+        .product-card { padding: 20px; }
+        .product-title { font-size: 2rem; }
+        .product-price { font-size: 2.8rem; }
+        .product-image-box { height: 320px; }
+        .description-section { padding: 24px 20px; }
+        #orderModal .modal-body { padding: 18px 18px 24px; }
+        #orderModal .modal-header { padding: 18px 18px 14px; }
+    }
+</style>
+
+<div class="page-bg-fixed">
+    <div class="bg-tile"></div>
+    <div class="bg-tile"></div>
+    <div class="bg-tile"></div>
+    <div class="bg-tile"></div>
+</div>
+
+<a href="/" class="back-link">
+    <i class="bi bi-arrow-left"></i> Назад до каталогу
+</a>
+
+<div class="product-card">
+    <h1 class="product-title">{{ gear.name }}</h1>
+    <div class="row g-5">
+        <div class="col-lg-6">
+            <div class="product-image-box">
+                {% if gear.image %}
+                    <img src="{{ gear.image.url }}" alt="{{ gear.name }}">
+                {% elif gear.image_url %}
+                    <img src="{{ gear.image_url }}" alt="{{ gear.name }}">
+                {% else %}
+                    <div class="no-image-placeholder">
+                        <i class="bi bi-image"></i>
+                        <p style="margin-top:12px; font-size:0.85rem; letter-spacing:2px; text-transform:uppercase;">Фото відсутнє</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-6 d-flex flex-column">
+            <div class="product-brand">{{ gear.brand }}</div>
+            {% if gear.price %}
+            <div class="product-price">{{ gear.price }} ₴</div>
+            {% endif %}
+            <div class="product-rating">
+                <span class="stars">★★★★★</span>
+                <span class="rating-text">(5.0 / 5)</span>
+            </div>
+            <div class="stock-badge {% if gear.in_stock %}in-stock{% else %}out-stock{% endif %}">
+                {% if gear.in_stock %}
+                    <i class="bi bi-check-circle-fill"></i> В наявності
+                {% else %}
+                    <i class="bi bi-x-circle-fill"></i> Немає в наявності
+                {% endif %}
+            </div>
+            <hr class="product-divider">
+            {% if gear.category %}
+            <div style="margin-bottom:20px;">
+                <div class="meta-label">Категорія</div>
+                <div class="meta-value">{{ gear.category.name }}</div>
+            </div>
+            {% endif %}
+            {% if gear.sports.all %}
+            <div style="margin-bottom:32px;">
+                <div class="meta-label" style="margin-bottom:10px;">Для чого підходить</div>
+                <div>
+                    {% for sport in gear.sports.all %}
+                        <span class="sport-tag">{{ sport.name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            <div class="mt-auto">
+                {% if gear.in_stock %}
+                    {% if user.is_authenticated %}
+                        <button type="button" class="btn-buy" data-bs-toggle="modal" data-bs-target="#orderModal">
+                            <i class="bi bi-lightning-fill"></i> КУПИТИ ЗАРАЗ
+                        </button>
+                        <a href="{% url 'add_to_cart' gear.id %}" class="btn-cart">
+                            <i class="bi bi-cart-plus"></i> Додати в кошик
+                        </a>
+                    {% else %}
+                        <button type="button" class="btn-buy" onclick="openRegisterModal()">
+                            <i class="bi bi-lightning-fill"></i> КУПИТИ ЗАРАЗ
+                        </button>
+                        <a href="{% url 'add_to_cart' gear.id %}" class="btn-cart">
+                            <i class="bi bi-cart-plus"></i> Додати в кошик
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="description-section">
+    <div class="desc-title">Опис товару</div>
+    <div class="desc-text">{{ gear.description|linebreaks }}</div>
+</div>
+
+{% if user.is_authenticated %}
+<div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-lightning-fill me-2"></i>Швидке замовлення</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Степ індикатор -->
+        <div class="step-indicator">
+            <div class="step-dot active" id="dot1">
+                <div class="num">1</div> Контакти
+            </div>
+            <div class="step-dot inactive" id="dot2">
+                <div class="num">2</div> Оплата
+            </div>
+        </div>
+
+        <!-- Товар + ціна -->
+        <div class="order-product-row">
+            <div class="order-product-name">{{ gear.name }}</div>
+            <div class="order-product-price">{{ gear.price }} ₴</div>
+        </div>
+
+        <!-- КРОК 1 — контакти -->
+        <div id="step-contacts">
+            <div class="mb-3">
+                <label class="form-label">Ім'я</label>
+                <input type="text" id="inp-name" class="form-control" value="{{ user.username }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Телефон</label>
+                <input type="tel" id="inp-phone" class="form-control" placeholder="+380XXXXXXXXX" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" id="inp-email" class="form-control" value="{{ user.email }}">
+            </div>
+            <div class="mb-3">
+                <div class="tg-info-block">
+                    <i class="bi bi-telegram me-1" style="color:#CCFF00;"></i>
+                    <b>Підтвердження в Telegram:</b><br>
+                    1. Напишіть <b>/start</b> боту <a href="https://t.me/usernemepro_bot" target="_blank">@usernemepro_bot</a><br>
+                    2. Вкажіть свій @username нижче
+                </div>
+                <label class="form-label">Telegram <span style="color:#2a2a2a; font-weight:400;">(необов'язково)</span></label>
+                <input type="text" id="inp-telegram" class="form-control" placeholder="@username">
+            </div>
+            <button type="button" class="btn-confirm" onclick="goToPayment()">
+                Далі — до оплати <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+
+        <!-- КРОК 2 — картка -->
+        <div id="step-payment" style="display:none;">
+            <div class="security-badge">
+                <i class="bi bi-shield-lock-fill"></i>
+                Захищена оплата — дані картки не зберігаються
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Дані картки</label>
+                <div id="card-element"></div>
+                <div id="card-errors"></div>
+            </div>
+            <button type="button" class="btn-confirm" id="pay-button" onclick="submitPayment()">
+                <i class="bi bi-lightning-fill me-1"></i> Оплатити {{ gear.price }} ₴
+            </button>
+            <button type="button" class="btn-back-step" onclick="backToContacts()">
+                ← Назад до контактів
+            </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+const GEAR_ID = {{ gear.id }};
+const GEAR_PRICE = parseFloat("{{ gear.price }}".replace(",", "."));
+const CSRF_TOKEN = '{{ csrf_token }}';
+const STRIPE_PK = '{{ stripe_public_key }}';
+
+const stripe = Stripe(STRIPE_PK);
+const elements = stripe.elements({
+    appearance: {
+        theme: 'night',
+        variables: {
+            colorPrimary: '#CCFF00',
+            colorBackground: '#111111',
+            colorText: '#ffffff',
+            colorDanger: '#e03a3a',
+            borderRadius: '0px',
+            fontFamily: 'Barlow Condensed, sans-serif',
+        }
+    }
+});
+const card = elements.create('card', {
+    style: {
+        base: {
+            color: '#fff',
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontSize: '16px',
+            letterSpacing: '1px',
+            '::placeholder': { color: '#2a2a2a' }
+        },
+        invalid: { color: '#e03a3a' }
+    }
+});
+card.mount('#card-element');
+card.on('focus', () => document.getElementById('card-element').classList.add('focused'));
+card.on('blur', () => document.getElementById('card-element').classList.remove('focused'));
+card.on('change', e => {
+    document.getElementById('card-errors').textContent = e.error ? e.error.message : '';
+});
+
+function goToPayment() {
+    const name = document.getElementById('inp-name').value.trim();
+    const phone = document.getElementById('inp-phone').value.trim();
+    if (!name || !phone) {
+        alert("Заповніть ім'я та телефон!");
+        return;
+    }
+    if (!/^\+380\d{9}$/.test(phone)) {
+        alert("Введіть номер у форматі +380XXXXXXXXX");
+        return;
+    }
+    document.getElementById('step-contacts').style.display = 'none';
+    document.getElementById('step-payment').style.display = 'block';
+    document.getElementById('dot1').className = 'step-dot done';
+    document.getElementById('dot2').className = 'step-dot active';
+}
+
+function backToContacts() {
+    document.getElementById('step-payment').style.display = 'none';
+    document.getElementById('step-contacts').style.display = 'block';
+    document.getElementById('dot1').className = 'step-dot active';
+    document.getElementById('dot2').className = 'step-dot inactive';
+}
+
+async function submitPayment() {
+    const btn = document.getElementById('pay-button');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Обробка...';
+
+    try {
+       const orderRes = await fetch('/quick-order/' + GEAR_ID + '/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': CSRF_TOKEN
+            },
+            body: new URLSearchParams({
+                name: document.getElementById('inp-name').value,
+                phone: document.getElementById('inp-phone').value,
+                email: document.getElementById('inp-email').value,
+                telegram: document.getElementById('inp-telegram').value,
+                ajax: 'true'
+            })
+        });
+        const orderData = await orderRes.json();
+
+        if (orderData.error) {
+            document.getElementById('card-errors').textContent = orderData.error;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-lightning-fill me-1"></i> Оплатити {{ gear.price }} ₴';
+            return;
+        }
+
+        const result = await stripe.confirmCardPayment(orderData.clientSecret, {
+            payment_method: { card: card }
+        });
+
+        if (result.error) {
+            document.getElementById('card-errors').textContent = result.error.message;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-lightning-fill me-1"></i> Оплатити {{ gear.price }} ₴';
+        } else {
+            window.location.href = '/order-success/';
+        }
+
+    } catch(e) {
+        document.getElementById('card-errors').textContent = 'Помилка: ' + e.message;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightning-fill me-1"></i> Оплатити {{ gear.price }} ₴';
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    var modalElement = document.getElementById('orderModal');
+    if (modalElement) { document.body.appendChild(modalElement); }
+
+    document.getElementById('orderModal').addEventListener('hidden.bs.modal', function() {
+        backToContacts();
+        document.getElementById('card-errors').textContent = '';
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('open_modal') === '1') {
+        var orderModal = new bootstrap.Modal(document.getElementById('orderModal'));
+        orderModal.show();
+    }
+});
+</script>
+{% endblock %}
