@@ -1,132 +1,52 @@
-{% extends 'gear/base.html' %}
-{% block title %}Оренда підтверджена — Extreme Gear{% endblock %}
-{% block content %}
-<style>
-    .success-wrap {
-        max-width: 600px;
-        margin: 60px auto;
-        text-align: center;
-    }
-    .success-card {
-        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(174,221,0,0.03));
-        border: 1.5px solid rgba(174,221,0,0.25);
-        border-radius: 24px;
-        padding: 48px 40px;
-        box-shadow: 0 18px 44px rgba(0,0,0,0.28);
-    }
-    .success-icon {
-        font-size: 4rem;
-        margin-bottom: 20px;
-    }
-    .success-title {
-        font-family: 'Anton', sans-serif;
-        font-size: 2rem;
-        letter-spacing: 4px;
-        color: var(--acid);
-        margin-bottom: 12px;
-        text-transform: uppercase;
-    }
-    .success-sub {
-        color: var(--gray);
-        font-size: 0.95rem;
-        line-height: 1.6;
-        margin-bottom: 28px;
-    }
-    .success-details {
-        background: #111;
-        border: 1.5px solid #262626;
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 28px;
-        text-align: left;
-    }
-    .success-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-    .success-row:last-child {
-        margin-bottom: 0;
-        border-top: 1px solid var(--gray2);
-        padding-top: 10px;
-        margin-top: 6px;
-    }
-    .success-label {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 0.76rem;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: var(--gray);
-    }
-    .success-val {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 0.92rem;
-        font-weight: 700;
-        color: var(--white);
-    }
-    .success-total {
-        font-family: 'Anton', sans-serif;
-        font-size: 1.4rem;
-        color: var(--acid);
-        letter-spacing: 2px;
-    }
-    .btn-back-rental {
-        display: inline-block;
-        background: var(--acid);
-        color: var(--black);
-        padding: 13px 28px;
-        border-radius: 14px;
-        font-family: 'Anton', sans-serif;
-        letter-spacing: 2px;
-        text-decoration: none;
-        transition: all 0.2s;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-    }
-    .btn-back-rental:hover {
-        background: var(--white);
-        color: var(--black);
-        transform: translateY(-2px);
-    }
-</style>
+{% extends "gear/base.html" %}
 
-<div class="success-wrap">
-    <div class="success-card">
-        <div class="success-icon">✅</div>
-        <h1 class="success-title">Оренду підтверджено!</h1>
-        <p class="success-sub">
-            Дякуємо, <strong style="color:var(--white);">{{ rental.customer_name }}</strong>!<br>
-            Ваша оренда <strong style="color:var(--white);">{{ rental.rental_item.name }}</strong> успішно оплачена.<br>
-            Адміністратор зв'яжеться з вами для підтвердження деталей.
+{% block title %}Замовлення прийнято{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px; font-family: sans-serif;">
+    
+    <div style="background: #181815; width: 100%; max-width: 550px; padding: 45px 35px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; border: 1px solid #2a2a22;">
+        
+        <div style="width: 75px; height: 75px; border: 2px solid #aedd00; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px auto; background: rgba(174, 221, 0, 0.05);">
+            <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#aedd00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+
+        <div style="display: inline-block; background: #aedd00; color: #181815; padding: 4px 18px; border-radius: 30px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;">
+            Успішно
+        </div>
+
+        <h1 style="color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 2.1rem; margin: 0 0 5px 0; letter-spacing: 0.5px;">
+            Замовлення
+        </h1>
+        <h1 style="color: #aedd00; font-weight: 800; text-transform: uppercase; font-size: 2.1rem; margin: 0 0 25px 0; letter-spacing: 0.5px;">
+            прийнято!
+        </h1>
+
+        <p style="color: #9a9a95; font-size: 1rem; line-height: 1.6; margin: 0 auto 25px auto; max-width: 450px;">
+            Дякуємо за покупку. Наш менеджер вже отримав заявку і зв'яжеться з вами протягом <span style="color: #aedd00; font-weight: 700;">15 хвилин</span> для уточнення деталей доставки.
         </p>
 
-        <div class="success-details">
-            <div class="success-row">
-                <span class="success-label">Спорядження</span>
-                <span class="success-val">{{ rental.rental_item.name }}</span>
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px 20px; margin-bottom: 30px; text-align: left; font-size: 0.95rem; color: #ffffff;">
+            <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <span style="color: #9a9a95;">📅 Дата видачі:</span>
+                <span style="font-weight: 700;">{{ rental.start_date }}</span>
             </div>
-            <div class="success-row">
-                <span class="success-label">Дата початку</span>
-                <span class="success-val">{{ rental.start_date }}</span>
+            <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <span style="color: #9a9a95;">📅 Дата повернення:</span>
+                <span style="font-weight: 700;">{{ rental.end_date }}</span>
             </div>
-            <div class="success-row">
-                <span class="success-label">Дата закінчення</span>
-                <span class="success-val">{{ rental.end_date }}</span>
-            </div>
-            <div class="success-row">
-                <span class="success-label">Тривалість</span>
-                <span class="success-val">{{ rental.days }} діб</span>
-            </div>
-            <div class="success-row">
-                <span class="success-label">Сума оплачено</span>
-                <span class="success-total">{{ rental.total_price }} ₴</span>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
+                <span style="color: #9a9a95;">⏱️ Тривалість:</span>
+                <span style="color: #aedd00; font-weight: 700;">{{ rental.days }} дн.</span>
             </div>
         </div>
 
-        <a href="{% url 'rental_list' %}" class="btn-back-rental">
-            ← Назад до оренди
+        <a href="{% url 'home' %}" style="display: block; background: #aedd00; color: #181815; text-decoration: none; padding: 15px 20px; border-radius: 12px; font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.2s;">
+            ← Повернутися до магазину
         </a>
+
     </div>
 </div>
 {% endblock %}

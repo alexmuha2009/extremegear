@@ -21,6 +21,7 @@ urlpatterns = [
     path("order-success/", views.order_success, name="order_success"),
     path("quick-order/<int:gear_id>/", views.quick_order, name="quick_order"),
     path("create-payment-intent/", views.create_payment_intent, name="create_payment_intent"),
+    path("create-rental-payment-intent/", views.create_rental_payment_intent, name="create_rental_payment_intent"),
     path("rental/", views.rental_list, name="rental_list"),
     path("rental/<int:item_id>/", views.rental_checkout, name="rental_checkout"),
     path("rental/success/<int:rental_id>/", views.rental_success, name="rental_success"),
@@ -28,7 +29,5 @@ urlpatterns = [
     path("api/ai/", views.query_openrouter, name="query_openrouter"),
     path("api/calculate-gear/", views.calculate_gear_api, name="calculate_gear_api"),
     path("api/gear/<int:gear_id>/image/", views.get_gear_image_redirect, name="get_gear_image_redirect"),
-
-    # ✅ НОВИЙ: Telegram webhook — зберігає chat_id покупців
     path("telegram-webhook/", views.telegram_webhook, name="telegram_webhook"),
 ]

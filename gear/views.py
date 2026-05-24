@@ -6,7 +6,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .models import Sport, GearCategory, Gear, News, Order, RentalItem, Rental
-from django.db.models import FloatField
 from django.db.models.functions import Cast
 import json
 import requests
@@ -73,12 +72,9 @@ def send_telegram_rental(name, phone, item_name, start_date, end_date, total_pri
 
 
 def get_chat_id_by_username(username):
-    """Шукає chat_id по username — спочатку в БД, потім у файлі"""
     if not username:
         return None
     clean = username.lower().lstrip('@')
-
-    # Шукаємо в БД (пріоритет)
     try:
         from .models import TelegramUser
         tg_user = TelegramUser.objects.filter(username=clean).first()
@@ -86,8 +82,6 @@ def get_chat_id_by_username(username):
             return str(tg_user.chat_id)
     except Exception:
         pass
-
-    # Fallback — старий файл
     users_file = 'tg_users.json'
     if os.path.exists(users_file):
         try:
@@ -96,7 +90,6 @@ def get_chat_id_by_username(username):
             return users.get(clean)
         except Exception:
             pass
-
     return None
 
 
@@ -138,7 +131,6 @@ def send_telegram_to_buyer(telegram_username, name, items_list, total_price):
 
 @csrf_exempt
 def telegram_webhook(request):
-    """Зберігає chat_id покупця коли він пише /start боту"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -149,8 +141,6 @@ def telegram_webhook(request):
 
             if chat_id and username:
                 clean_username = username.lower()
-
-                # Зберігаємо в БД
                 try:
                     from .models import TelegramUser
                     TelegramUser.objects.update_or_create(
@@ -160,7 +150,6 @@ def telegram_webhook(request):
                 except Exception as e:
                     print(f"DB save error: {e}")
 
-                # Відповідаємо на /start
                 if text and text.startswith('/start'):
                     requests.post(
                         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -177,7 +166,6 @@ def telegram_webhook(request):
                     )
         except Exception as e:
             print(f"Webhook error: {e}")
-
     return JsonResponse({'ok': True})
 
 
@@ -242,7 +230,6 @@ def user_logout(request):
 # ==========================================
 
 from django.core.paginator import Paginator
-
 
 def home(request):
     sports_with_count = Sport.objects.annotate(items_count=Count('gears'))
@@ -337,7 +324,7 @@ def beginners_guide(request):
 
 
 # ==========================================
-# КОШИК
+# КОШИК ТА КУПІВЛЯ
 # ==========================================
 
 def add_to_cart(request, gear_id):
@@ -539,6 +526,8 @@ def rental_checkout(request, item_id):
                 messages.error(request, "Дата закінчення має бути пізніше дати початку!")
                 return redirect(f"/rental/{item_id}/")
             total_price = item.price_per_day * days
+            
+            # Створюємо оренду спочатку в статусі 'pending'
             rental = Rental.objects.create(
                 gear=item,
                 customer_name=name,
@@ -550,31 +539,49 @@ def rental_checkout(request, item_id):
                 total_price=total_price,
                 status='pending'
             )
-            safe_name = item.name.encode('ascii', 'ignore').decode('ascii') or 'Rental'
-            checkout_session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'uah',
-                        'product_data': {
-                            'name': f"Rental: {safe_name} ({days} days)"
-                        },
-                        'unit_amount': int(total_price * 100),
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                success_url=request.build_absolute_uri(f'/rental/success/{rental.id}/'),
-                cancel_url=request.build_absolute_uri(f'/rental/{item_id}/'),
-            )
-            rental.stripe_session_id = checkout_session.id
-            rental.save()
+            
+            # Сповіщення в телеграм про спробу оренди
             send_telegram_rental(name, phone, item.name, start_date, end_date, total_price)
-            return redirect(checkout_session.url, code=303)
+            
+            # Замість редіректу на Stripe, рендеримо вбудовану платіжну сторінку
+            return render(request, 'gear/stripe_pay.html', {
+                'rental': rental,
+                'total_price': total_price,
+                'gear': item
+            })
         except Exception as e:
             messages.error(request, f"Помилка: {str(e)}")
             return redirect(f"/rental/{item_id}/")
     return render(request, 'gear/rental_detail.html', {'item': item})
+
+
+@csrf_exempt
+def create_rental_payment_intent(request):
+    """Спеціальний API-ендпоінт для створення PaymentIntent оренди"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Login required'}, status=401)
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            rental_id = data.get('rental_id')
+            rental = get_object_or_404(Rental, id=rental_id)
+            
+            total_amount = int(rental.total_price * 100)
+            
+            intent = stripe.PaymentIntent.create(
+                amount=total_amount,
+                currency='uah',
+                automatic_payment_methods={'enabled': True},
+            )
+            
+            # Зберігаємо ID інтенту в сесію або модель за потреби
+            rental.stripe_session_id = intent.id
+            rental.save()
+            
+            return JsonResponse({'clientSecret': intent.client_secret})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=403)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
 def rental_success(request, rental_id):
@@ -689,20 +696,20 @@ def query_openrouter(request):
         if not prompt:
             return JsonResponse({'content': "Напишіть, що вас цікавить..."})
 
-        api_key = "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"
+        api_key = "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"
         url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
+             "Authorization": f"Bearer {api_key}",
+             "Content-Type": "application/json",
             "HTTP-Referer": "http://localhost:8000",
             "X-Title": "Extreme Gear Store"
-        }
+}
 
         system_instruction = """Ти — консультант магазину екстремального спорядження.
 Твоя тема: спортивне спорядження, екіпірування, виживання та екстремальний спорт.
 
 ОБОВ'ЯЗКОВО постав тег в ПЕРШОМУ рядку відповіді:
-- [SHOW_PRODUCTS] — якщо людина шукає або просить порадити конкретне спорядження чи товар
+- [SHOW_PRODUCTS] — якщо людина шукає або просить порадити конкрете спорядження чи товар
 - [NO_PRODUCTS] — у всіх інших випадках (травми, поради, техніка, офтопік тощо)
 
 ПРАВИЛА:
